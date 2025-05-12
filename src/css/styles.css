@@ -1,0 +1,227 @@
+/* Base styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 16px;
+  min-width: 600px;
+  line-height: 1.5;
+}
+
+/* Header */
+h1 {
+  font-size: 18px;
+  margin-top: 0;
+  color: #1DA1F2;
+}
+
+/* Status indicator */
+#status {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+/* Button styles */
+button {
+  background: #1DA1F2;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #1a91da;
+}
+
+/* Bookmarks display area */
+#bookmarksList {
+  margin-top: 20px;
+  max-height: 500px;
+  overflow-y: auto;
+  border-top: 1px solid #eee;
+}
+
+/* Main content container */
+#popup-content {
+  margin-top: 15px;
+}
+
+/* Instructions section */
+.method-section {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.method-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.method-description {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+/* Steps display */
+.steps {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+.steps ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+/* Bookmark items */
+.bookmark-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Sort options area */
+.sort-options {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Media content */
+.media-container {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.tweet-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+}
+
+.video-container {
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.video-player {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+/* Author info */
+.author-info {
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.author-photo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.author-username {
+  color: #536471;
+}
+
+.timestamp {
+  margin: 5px 0;
+  color: #536471;
+  font-size: 0.9em;
+}
+
+/* Video overlay */
+.video-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.7);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.play-button {
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 15px solid white;
+  margin-left: 5px;
+}
+
+.video-caption {
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: white;
+  background: rgba(0,0,0,0.6);
+  padding: 5px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.twitter-link {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+/* Loading and error states */
+.centered-message {
+  text-align: center;
+  padding: 20px;
+}
+
+.error-message {
+  color: #ff6b6b;
+}
+
+.loading-text {
+  margin-bottom: 15px;
+}
+
+.loading-subtext {
+  color: #666;
+}
+
+/* Export button */
+#export-json {
+  margin-left: 10px;
+}
+
+/* Retry button */
+#retry-tokens {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+} 
