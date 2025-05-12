@@ -1,15 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Twitter/X Bookmark Exporter</title>
+  <title>Social Bookmarks Exporter</title>
   <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-  <h1>Twitter/X Bookmark Exporter</h1>
+  <h1>Social Bookmarks Exporter</h1>
   
-  <!-- Instructions for users -->
-  <div class="method-section">
-    <div class="method-title">How to use:</div>
+  <!-- Platform selector -->
+  <div class="platform-selector">
+    <div class="select-label">Choose platform:</div>
+    <div class="platform-buttons">
+      <button id="twitter-platform" class="platform-button platform-selected">Twitter/X</button>
+      <button id="linkedin-platform" class="platform-button">LinkedIn</button>
+    </div>
+  </div>
+  
+  <!-- Twitter Instructions -->
+  <div id="twitter-instructions" class="method-section platform-instructions">
+    <div class="method-title">How to use with Twitter:</div>
     <div class="method-description">
       1. Navigate to <a href="https://twitter.com/i/bookmarks" target="_blank">your Twitter/X bookmarks page</a><br>
       2. Make sure you're logged into Twitter/X<br>
@@ -18,10 +27,21 @@
     </div>
   </div>
   
+  <!-- LinkedIn Instructions -->
+  <div id="linkedin-instructions" class="method-section platform-instructions" style="display:none;">
+    <div class="method-title">How to use with LinkedIn:</div>
+    <div class="method-description">
+      1. Navigate to <a href="https://www.linkedin.com/my-items/saved-posts/" target="_blank">your LinkedIn saved posts</a><br>
+      2. Make sure you're logged into LinkedIn<br>
+      3. Browse LinkedIn to generate some network traffic<br>
+      4. Click the "Get My Bookmarks" button below
+    </div>
+  </div>
+  
   <!-- Main content area -->
   <div id="popup-content">
     <!-- Status indicator -->
-    <div id="status">Status: Ready to export. Navigate to your Twitter/X bookmarks page first!</div>
+    <div id="status">Status: Ready to export. Navigate to your platform first!</div>
     
     <!-- Bookmarks will be displayed here -->
     <div id="bookmarksList"></div>

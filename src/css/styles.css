@@ -132,6 +132,21 @@ button:hover {
   height: 32px;
   border-radius: 50%;
   margin-right: 8px;
+  object-fit: cover;
+}
+
+/* Adding styles for author photo in bookmark cards */
+.bookmark-author {
+  display: flex;
+  align-items: center;
+}
+
+.bookmark-author .author-photo {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 8px;
+  object-fit: cover;
 }
 
 .author-username {
@@ -224,4 +239,57 @@ button:hover {
   padding: 8px 15px;
   border-radius: 20px;
   cursor: pointer;
+}
+
+/* Platform selector styles */
+.platform-selector {
+  margin: 10px auto;
+  padding: 10px;
+  text-align: center;
+}
+
+.select-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.platform-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.platform-button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  background-color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.platform-button:hover {
+  background-color: #f1f1f1;
+}
+
+.platform-selected {
+  background-color: #1d9bf0;
+  color: white;
+  border-color: #1d9bf0;
+}
+
+.platform-selected:hover {
+  background-color: #1a8cd8;
+}
+
+/* LinkedIn specific colors */
+.platform-selected.linkedin {
+  background-color: #0077b5;
+  border-color: #0077b5;
+}
+
+.platform-selected.linkedin:hover {
+  background-color: #006699;
 } 

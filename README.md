@@ -1,14 +1,15 @@
-# Twitter Bookmarks Exporter Chrome Extension
+# Social Bookmarks Exporter Chrome Extension
 
-A Chrome extension that allows you to export your Twitter/X bookmarks in a convenient format.
+A Chrome extension that allows you to export your bookmarks and saved posts from Twitter/X and LinkedIn in a convenient format.
 
 ## Features
 
-- Automatically captures Twitter authentication tokens
-- Extracts bookmarks directly from the Twitter API
+- Automatically captures authentication tokens
+- Extracts bookmarks directly from platform APIs
 - Displays bookmarks with images and videos
 - Allows sorting by newest or oldest first
 - Export bookmarks as JSON
+- Supports both Twitter/X and LinkedIn
 
 ## How to Install
 
@@ -19,11 +20,23 @@ A Chrome extension that allows you to export your Twitter/X bookmarks in a conve
 
 ## How to Use
 
+### For Twitter/X Bookmarks:
+
 1. Navigate to Twitter/X and log in
 2. Click the extension icon in your Chrome toolbar
-3. Click "Get My Bookmarks" 
-4. If needed, interact with Twitter to generate API requests
-5. Your bookmarks will be displayed and you can export them
+3. Ensure "Twitter/X" is selected in the platform selector
+4. Click "Get My Bookmarks" 
+5. If needed, interact with Twitter to generate API requests
+6. Your bookmarks will be displayed and you can export them
+
+### For LinkedIn Saved Posts:
+
+1. Navigate to LinkedIn and log in
+2. Click the extension icon in your Chrome toolbar
+3. Select "LinkedIn" in the platform selector
+4. Click "Get My Bookmarks" 
+5. If needed, interact with LinkedIn to generate API requests
+6. Your saved posts will be displayed and you can export them
 
 ## Project Structure
 
@@ -59,6 +72,6 @@ A Chrome extension that allows you to export your Twitter/X bookmarks in a conve
 
 ## Notes
 
-- The extension requires a set of authentication tokens from Twitter to function
-- It automatically captures these tokens from your active Twitter session
+- The extension requires a set of authentication tokens from each platform to function
+- It automatically captures these tokens from your active sessions
 - No data is sent to any third-party servers - all processing happens locally 
