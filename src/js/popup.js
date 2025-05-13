@@ -646,7 +646,7 @@ async function fetchTwitterBookmarks(csrfToken, authToken, cookies) {
     async function makeRequest(cursor) {
       // Build request variables
       const variables = {
-        count: 50, // Request more bookmarks per page
+        count: 100, // Request more bookmarks per page
         includePromotedContent: true,
       };
 
@@ -891,6 +891,9 @@ async function fetchLinkedInBookmarks(csrfToken, cookies) {
   let hasMore = true;
   let retryCount = 0;
   const MAX_RETRIES = 3;
+  const MAX_PAGES = 50; // Reduced from 400 since we'll fetch more per request
+  const COUNT_PER_REQUEST = 100; // Increased count to get more posts per request
+  let pageCount = 0;
 
   try {
     // Ensure we have the csrf token
@@ -914,28 +917,14 @@ async function fetchLinkedInBookmarks(csrfToken, cookies) {
     console.log('Cookies available:', cookies ? 'Yes (length: ' + cookies.length + ')' : 'No');
 
     // Keep requesting pages until we have all bookmarks or hit an error
-    while (hasMore && retryCount < MAX_RETRIES) {
+    while (hasMore && retryCount < MAX_RETRIES && pageCount < MAX_PAGES) {
       try {
-        // Construct the variables for the GraphQL query
-        const variables = {
-          start: start,
-          query: {
-            flagshipSearchIntent: 'SEARCH_MY_ITEMS_SAVED_POSTS'
-          }
-        };
-
-        // Add pagination token if we have one
-        if (paginationToken) {
-          variables.paginationToken = paginationToken;
-        }
-
-        // Build URL - use LinkedIn's preferred format instead of encoding the entire JSON
-        // Format: (start:0,query:(flagshipSearchIntent:SEARCH_MY_ITEMS_SAVED_POSTS))
-        let variablesString = `(start:${start},query:(flagshipSearchIntent:SEARCH_MY_ITEMS_SAVED_POSTS))`;
+        // Build URL with proper pagination parameters and count parameter
+        let variablesString = `(start:${start},count:${COUNT_PER_REQUEST},query:(flagshipSearchIntent:SEARCH_MY_ITEMS_SAVED_POSTS))`;
         
         // Add pagination token to the variables string if available
         if (paginationToken) {
-          variablesString = variablesString.replace(')', `,paginationToken:${encodeURIComponent(paginationToken)})`);
+          variablesString = `(start:${start},count:${COUNT_PER_REQUEST},paginationToken:${encodeURIComponent(paginationToken)},query:(flagshipSearchIntent:SEARCH_MY_ITEMS_SAVED_POSTS))`;
         }
         
         const url = `${baseEndpoint}?variables=${variablesString}&queryId=${queryId}`;
@@ -953,7 +942,10 @@ async function fetchLinkedInBookmarks(csrfToken, cookies) {
           'Cookie': cookies
         };
 
-        console.log(`Making LinkedIn API request (page ${start > 0 ? start/10 + 1 : 1})...`);
+        console.log(`Making LinkedIn API request (page ${pageCount + 1}, start=${start}, count=${COUNT_PER_REQUEST})...`);
+        if (paginationToken) {
+          console.log(`Using pagination token: ${paginationToken.substring(0, 20)}...`);
+        }
 
         // Make the API request
         const response = await fetch(url, {
@@ -1026,25 +1018,24 @@ async function fetchLinkedInBookmarks(csrfToken, cookies) {
           });
           
           // Get pagination information
-          const metadata = data?.data?.searchDashClustersByAll?.metadata;
+          const metadata = data?.data?.data?.searchDashClustersByAll?.metadata;
           if (metadata && metadata.paginationToken) {
             paginationToken = metadata.paginationToken;
             console.log('Found pagination token for next page:', paginationToken.substring(0, 20) + '...');
+            hasMore = true;
           } else {
             paginationToken = null;
+            hasMore = false;
           }
           
-          // Check if there are more items to fetch
-          hasMore = !!paginationToken;
+          // Update start for next page (increment by COUNT_PER_REQUEST)
+          start += COUNT_PER_REQUEST;
+          
+          // Increment page count
+          pageCount++;
           
           // Reset retry count on successful request
           retryCount = 0;
-          
-          // Update start for next page
-          if (hasMore) {
-            // Increment by the page size (typically 10)
-            start += 10;
-          }
         } else {
           console.error('Failed to extract LinkedIn posts:', extractionResult.error);
           console.log('Original response sample:', JSON.stringify(data).substring(0, 500) + '...');
@@ -1055,21 +1046,20 @@ async function fetchLinkedInBookmarks(csrfToken, cookies) {
             const metadata = data.data.searchDashClustersByAll.metadata;
             if (metadata && metadata.paginationToken) {
               paginationToken = metadata.paginationToken;
+              hasMore = true;
             } else {
               paginationToken = null;
+              hasMore = false;
             }
-            
-            // Check if there are more items to fetch
-            hasMore = !!paginationToken;
             
             // Process elements array if it exists using the older method
             processLinkedInResponseLegacy(data, allBookmarks);
             
-            // Update start for next page
-            if (hasMore) {
-              // Increment by the page size (typically 10)
-              start += 10;
-            }
+            // Update start for next page (use COUNT_PER_REQUEST)
+            start += COUNT_PER_REQUEST;
+            
+            // Increment page count
+            pageCount++;
             
             // Reset retry count even if extraction failed but we have data
             retryCount = 0;
@@ -1084,6 +1074,12 @@ async function fetchLinkedInBookmarks(csrfToken, cookies) {
               hasMore = false;
             }
           }
+        }
+
+        // If no posts were found in this page, stop pagination
+        if (extractionResult.count === 0 && (!data.data || !data.data.searchDashClustersByAll || !data.data.searchDashClustersByAll.elements || data.data.searchDashClustersByAll.elements.length === 0)) {
+          console.log('No more posts found in this page, stopping pagination');
+          hasMore = false;
         }
 
         // Add a small delay between requests to avoid rate limiting
@@ -1102,7 +1098,7 @@ async function fetchLinkedInBookmarks(csrfToken, cookies) {
       }
     }
 
-    console.log(`LinkedIn bookmarks fetched: ${allBookmarks.length}`);
+    console.log(`LinkedIn bookmarks fetched: ${allBookmarks.length} from ${pageCount} pages`);
     
     // Return the bookmarks we found (may be empty array if none found)
     return allBookmarks;
@@ -1178,7 +1174,11 @@ function extractLinkedInSavedPosts(apiResponse) {
         title: item.primarySubtitle?.text || '',
         postUrl: item.navigationUrl || (item.navigationContext?.url) || null,
         timestamp: timestamp,
-        imageUrl: item.entityEmbeddedObject?.image?.attributes?.[0]?.detailData?.vectorImage.rootUrl + item.entityEmbeddedObject?.image?.attributes?.[0]?.detailData?.vectorImage?.artifacts?.[0]?.fileIdentifyingUrlPathSegment || null
+        imageUrl: (() => {
+          const rootUrl = item.entityEmbeddedObject?.image?.attributes?.[0]?.detailData?.vectorImage?.rootUrl;
+          const pathSegment = item.entityEmbeddedObject?.image?.attributes?.[0]?.detailData?.vectorImage?.artifacts?.[0]?.fileIdentifyingUrlPathSegment;
+          return (rootUrl && pathSegment) ? rootUrl + pathSegment : null;
+        })()
       };
       console.log('user:', user, 'post:', post);
       extractedData.push({ user, post });
@@ -1263,7 +1263,7 @@ function processLinkedInResponseLegacy(data, allBookmarks) {
                 const largestImage = vectorImage.artifacts.reduce((prev, curr) => 
                   (curr.width > prev.width) ? curr : prev, { width: 0 });
                 
-                if (largestImage.fileIdentifyingUrlPathSegment) {
+                if (largestImage.fileIdentifyingUrlPathSegment && vectorImage.rootUrl) {
                   imageUrl = vectorImage.rootUrl + largestImage.fileIdentifyingUrlPathSegment;
                 }
               }
