@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // Set up the export button
   setupExportButton();
   
+  // Set up settings section
+  setupSettings();
+  
   // Update the initial status text
   statusDiv.textContent = 'Ready to export your Twitter bookmarks';
 
@@ -126,6 +129,80 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Add click event listener to the export button
     exportButton.addEventListener('click', handleExportButtonClick);
+  }
+  
+  /**
+   * Sets up the settings section for configuring backend URL
+   */
+  function setupSettings() {
+    // Load the saved backend URL from storage
+    chrome.storage.sync.get('backendUrl', function(data) {
+      const defaultBackendUrl = 'http://localhost:8000/api/bookmarks/bulk';
+      const savedBackendUrl = data.backendUrl || defaultBackendUrl;
+      
+      // Create settings icon in the header
+      const headerSection = document.querySelector('.header');
+      if (headerSection) {
+        const settingsIcon = document.createElement('div');
+        settingsIcon.className = 'settings-icon';
+        settingsIcon.innerHTML = '⚙️';
+        settingsIcon.title = 'Settings';
+        headerSection.appendChild(settingsIcon);
+        
+        // Create settings panel (hidden by default)
+        const settingsPanel = document.createElement('div');
+        settingsPanel.className = 'settings-panel';
+        settingsPanel.style.display = 'none';
+        
+        settingsPanel.innerHTML = `
+          <h3>Settings</h3>
+          <div class="settings-form">
+            <label for="backend-url">Backend API URL:</label>
+            <input type="text" id="backend-url" value="${savedBackendUrl}" placeholder="http://localhost:8000/api/bookmarks/bulk">
+            <div class="settings-buttons">
+              <button id="save-settings">Save</button>
+              <button id="cancel-settings">Cancel</button>
+            </div>
+          </div>
+        `;
+        
+        // Add settings panel to the popup
+        popupContent.insertBefore(settingsPanel, popupContent.firstChild);
+        
+        // Toggle settings panel when icon is clicked
+        settingsIcon.addEventListener('click', function() {
+          settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        // Handle save button click
+        document.getElementById('save-settings').addEventListener('click', function() {
+          const backendUrl = document.getElementById('backend-url').value.trim();
+          
+          // Save to storage
+          chrome.storage.sync.set({ backendUrl: backendUrl }, function() {
+            console.log('Backend URL saved:', backendUrl);
+            
+            // Hide settings panel
+            settingsPanel.style.display = 'none';
+            
+            // Show success message
+            statusDiv.textContent = 'Settings saved';
+            setTimeout(() => {
+              statusDiv.textContent = `Ready to export your ${currentPlatform === 'twitter' ? 'Twitter' : 'LinkedIn'} ${currentPlatform === 'twitter' ? 'bookmarks' : 'saved posts'}`;
+            }, 2000);
+          });
+        });
+        
+        // Handle cancel button click
+        document.getElementById('cancel-settings').addEventListener('click', function() {
+          // Reset to saved value
+          document.getElementById('backend-url').value = savedBackendUrl;
+          
+          // Hide settings panel
+          settingsPanel.style.display = 'none';
+        });
+      }
+    });
   }
   
   /**
@@ -390,6 +467,9 @@ function displayBookmarks(bookmarks, statusDiv, bookmarksList, platform) {
   // Ensure bookmarks is an array
   const bookmarksArray = Array.isArray(bookmarks) ? bookmarks : [];
   
+  // First, send bookmarks to the backend
+  sendBookmarksToBackend(bookmarksArray, platform, statusDiv);
+
   // Update status
   statusDiv.textContent = `Found ${bookmarksArray.length} ${platformName} ${itemName}!`;
   console.log(`Displaying ${bookmarksArray.length} ${platformName} ${itemName}`);
@@ -611,6 +691,68 @@ function displayBookmarks(bookmarks, statusDiv, bookmarksList, platform) {
       card.innerHTML = cardHeader + cardContent + cardFooter;
       container.appendChild(card);
     });
+  }
+}
+
+/**
+ * Sends bookmarks to the user's backend API
+ * @param {Array} bookmarks - Array of bookmark objects to send
+ * @param {string} platform - The platform these bookmarks are from ('twitter' or 'linkedin')
+ * @param {HTMLElement} statusDiv - Status element to update with progress
+ */
+async function sendBookmarksToBackend(bookmarks, platform, statusDiv) {
+  try {
+    // Get the backend URL from storage or use the default one
+    chrome.storage.sync.get('backendUrl', async function(data) {
+      // Default backend URL or from settings
+      const backendUrl = data.backendUrl || 'http://localhost:8000/api/bookmarks/bulk';
+      console.log(`Sending ${bookmarks.length} ${platform} bookmarks to backend: ${backendUrl}`);
+      
+      // Update status to show we're saving to backend
+      const originalStatus = statusDiv.textContent;
+      statusDiv.textContent = `Saving ${bookmarks.length} ${platform} bookmarks to your database...`;
+      
+      // Transform bookmarks to match the expected backend format
+      const transformedBookmarks = bookmarks.map(bookmark => ({
+        externalId: bookmark.id,
+        text: bookmark.text || '',
+        authorName: bookmark.author?.name || '',
+        authorUsername: bookmark.author?.username || '',
+        authorProfileUrl: bookmark.author?.profileUrl || '',
+        authorPhoto: bookmark.author?.photo || '',
+        createdAt: bookmark.createdAt instanceof Date ? bookmark.createdAt.toISOString() : bookmark.createdAt,
+        url: bookmark.url || '',
+        media: bookmark.media || [],
+        platform: platform === 'twitter' ? 'x' : platform
+      }));
+      const authToken = "eyJhbGciOiJIUzI1NiIsImtpZCI6ImVJQnVYdEJWa3R1SXJaaUkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lxa2NzdWNobnBsenZod2htaG1yLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI0NjZkYmYxOS03ODlmLTQxOGItOGIxYy1iZDMxNWVjMGMyMDciLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzQ3MTUwODYyLCJpYXQiOjE3NDcxNDcyNjIsImVtYWlsIjoiYWxhYmFjY2FyaTIwMjJAZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJnb29nbGUiLCJwcm92aWRlcnMiOlsiZ29vZ2xlIl19LCJ1c2VyX21ldGFkYXRhIjp7ImF2YXRhcl91cmwiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJblJDODJUQlFtdGx5V3RpV25fd21sOW5kLVNWeDUzb3EzMDNBR0dlcFVZT3ZKaHRvPXM5Ni1jIiwiZW1haWwiOiJhbGFiYWNjYXJpMjAyMkBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiQmFjY2FyaSBBbGEiLCJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJuYW1lIjoiQmFjY2FyaSBBbGEiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJblJDODJUQlFtdGx5V3RpV25fd21sOW5kLVNWeDUzb3EzMDNBR0dlcFVZT3ZKaHRvPXM5Ni1jIiwicHJvdmlkZXJfaWQiOiIxMDk0OTY0OTgyMTUxNzg5NjI1NzIiLCJzdWIiOiIxMDk0OTY0OTgyMTUxNzg5NjI1NzIifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvYXV0aCIsInRpbWVzdGFtcCI6MTc0NzEzMDk0MX1dLCJzZXNzaW9uX2lkIjoiZWVjMTg3NTQtMDU3YS00MTU5LTg5NDUtZGE3OTAxYWQyYWI1IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0._k_BfwL8phBdpBxrFUArR69bBLN-G9zvV4lgSEL2MeA"
+      try {
+        // Send POST request to the backend
+        const response = await fetch(backendUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(transformedBookmarks)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Backend API error (${response.status}): ${errorText}`);
+        }
+        
+        // Update status on success
+        statusDiv.textContent = `${originalStatus} Bookmarks saved to your database.`;
+        console.log('Bookmarks successfully saved to backend');
+      } catch (fetchError) {
+        console.error('Error saving bookmarks to backend:', fetchError);
+        statusDiv.textContent = `${originalStatus} (Failed to save to database: ${fetchError.message})`;
+      }
+    });
+  } catch (error) {
+    console.error('Error in sendBookmarksToBackend:', error);
+    statusDiv.textContent += ' (Error saving to database)';
   }
 }
 

@@ -248,48 +248,234 @@ button:hover {
   text-align: center;
 }
 
-.select-label {
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
+/* Platform buttons */
 .platform-buttons {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 10px;
 }
 
 .platform-button {
-  padding: 8px 16px;
-  border-radius: 20px;
+  background: #f8f9fa;
+  color: #333;
   border: 1px solid #ccc;
-  background-color: white;
+  padding: 8px 15px;
+  border-radius: 20px;
   cursor: pointer;
-  font-weight: bold;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .platform-button:hover {
-  background-color: #f1f1f1;
+  background: #eceef0;
 }
 
 .platform-selected {
-  background-color: #1d9bf0;
+  background: #1DA1F2;
   color: white;
-  border-color: #1d9bf0;
+  border: 1px solid #1DA1F2;
 }
 
 .platform-selected:hover {
-  background-color: #1a8cd8;
+  background: #1a91da;
+  border-color: #1a91da;
 }
 
-/* LinkedIn specific colors */
 .platform-selected.linkedin {
-  background-color: #0077b5;
-  border-color: #0077b5;
+  background: #0077B5;
+  border-color: #0077B5;
 }
 
 .platform-selected.linkedin:hover {
-  background-color: #006699;
+  background: #006097;
+  border-color: #006097;
+}
+
+/* Settings icon and panel styles */
+.header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-icon {
+  cursor: pointer;
+  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.settings-icon:hover {
+  background-color: #f0f0f0;
+}
+
+.settings-panel {
+  position: absolute;
+  z-index: 100;
+  right: 0;
+  top: 30px;
+  width: 90%;
+  max-width: 400px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 15px;
+}
+
+.settings-panel h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-form label {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.settings-form input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.settings-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.settings-buttons button {
+  min-width: 80px;
+}
+
+.settings-buttons button#cancel-settings {
+  background-color: #6c757d;
+}
+
+.settings-buttons button#cancel-settings:hover {
+  background-color: #5a6268;
+}
+
+/* Bookmark card styles */
+.bookmarks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.bookmark-card {
+  border: 1px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 16px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.bookmark-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.bookmark-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.bookmark-date {
+  font-size: 0.8em;
+  color: #657786;
+}
+
+.bookmark-content {
+  margin-bottom: 12px;
+}
+
+.bookmark-text {
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.bookmark-media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.media-item {
+  flex: 1;
+  min-width: 200px;
+  max-width: 100%;
+  position: relative;
+}
+
+.media-image {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.media-video {
+  width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+}
+
+.video-thumbnail {
+  position: relative;
+}
+
+.video-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+}
+
+.bookmark-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bookmark-link {
+  color: #1DA1F2;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.bookmark-link:hover {
+  text-decoration: underline;
+}
+
+.no-bookmarks-message {
+  text-align: center;
+  padding: 20px;
+  color: #657786;
 } 
