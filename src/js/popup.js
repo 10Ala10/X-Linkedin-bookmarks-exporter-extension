@@ -17,11 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // Set up platform selection
   setupPlatformSelection();
   
-  // Set up the bookmarks list container
-  setupBookmarksContainer();
-  
-  // Set up the export button
-  setupExportButton();
+  // Set up the bookmarks fetch button
+  setupFetchButton();
   
   // Set up settings section
   setupSettings();
@@ -48,10 +45,6 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Update status
         statusDiv.textContent = 'Ready to export your Twitter bookmarks';
-        
-        // Clear bookmarks list
-        const bookmarksList = document.getElementById('bookmarksList');
-        bookmarksList.innerHTML = '';
       }
     });
     
@@ -66,10 +59,6 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Update status
         statusDiv.textContent = 'Ready to export your LinkedIn bookmarks';
-        
-        // Clear bookmarks list
-        const bookmarksList = document.getElementById('bookmarksList');
-        bookmarksList.innerHTML = '';
       }
     });
     
@@ -87,24 +76,11 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
   }
-
-  /**
-   * Sets up the bookmarks container element
-   */
-  function setupBookmarksContainer() {
-    // Create or use existing bookmarks list container
-    let bookmarksList = document.getElementById('bookmarksList');
-    if (!bookmarksList) {
-      bookmarksList = document.createElement('div');
-      bookmarksList.id = 'bookmarksList';
-      popupContent.appendChild(bookmarksList);
-    }
-  }
   
   /**
-   * Sets up the main export button and its event listener
+   * Sets up the main fetch button and its event listener
    */
-  function setupExportButton() {
+  function setupFetchButton() {
     // Remove any existing button
     const oldButton = document.getElementById('scrapeBookmarks');
     if (oldButton) {
@@ -117,18 +93,18 @@ document.addEventListener('DOMContentLoaded', function () {
     buttonContainer.style.justifyContent = 'center';
     buttonContainer.style.marginBottom = '15px';
 
-    // Create export button
-    const exportButton = document.createElement('button');
-    exportButton.id = 'export-bookmarks-btn';
-    exportButton.textContent = 'Get My Bookmarks';
-    exportButton.title = 'Automatically extracts authentication tokens from your active Twitter session and exports your bookmarks';
+    // Create fetch button
+    const fetchButton = document.createElement('button');
+    fetchButton.id = 'export-bookmarks-btn';
+    fetchButton.textContent = 'Save My Bookmarks';
+    fetchButton.title = 'Automatically extracts bookmarks and saves them to your database';
 
     // Add button to container and container to popup
-    buttonContainer.appendChild(exportButton);
+    buttonContainer.appendChild(fetchButton);
     popupContent.insertBefore(buttonContainer, document.getElementById('bookmarksList'));
     
-    // Add click event listener to the export button
-    exportButton.addEventListener('click', handleExportButtonClick);
+    // Add click event listener to the fetch button
+    fetchButton.addEventListener('click', handleExportButtonClick);
   }
   
   /**
@@ -250,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Update UI to show we're working
       statusDiv.textContent = 'Checking for authentication tokens...';
-      showLoadingMessage(`Looking for ${currentPlatform} authentication tokens...`);
+      showLoadingMessage('Looking for authentication tokens...');
 
       // For LinkedIn, we need to get the cookies from the tab itself to avoid CSP issues
       if (currentPlatform === 'linkedin') {
@@ -386,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <div class="centered-message">
         <div class="loading-text">${message}</div>
         <div class="loading-subtext">
-          This may take a moment if we need to monitor network traffic.
+          Please wait while we process your request.
         </div>
       </div>
     `;
@@ -426,7 +402,7 @@ function handleMissingTokens(statusDiv, bookmarksList, platform) {
   bookmarksList.innerHTML = `
     <div class="centered-message">
       <div class="error-message" style="margin-bottom: 15px;">
-        <strong>No ${platformName} authentication tokens detected yet.</strong>
+        <strong>No ${platformName} authentication tokens detected.</strong>
       </div>
       <div style="margin-bottom: 15px;">
         Please interact with ${platformName} to generate some API requests:
@@ -435,8 +411,7 @@ function handleMissingTokens(statusDiv, bookmarksList, platform) {
         <li>Make sure you're logged in to ${platformName}</li>
         <li>Navigate to your <a href="${platformUrl}" target="_blank">${platform === 'twitter' ? 'bookmarks' : 'saved posts'} page</a></li>
         <li>Scroll down a bit to load more content</li>
-        <li>Try clicking on a few items or refreshing the page</li>
-        <li>Then click "Get My Bookmarks" again</li>
+        <li>Then click "Save My Bookmarks" again</li>
       </ol>
       <div style="margin-top: 15px;">
         <button id="retry-tokens">
@@ -467,231 +442,21 @@ function displayBookmarks(bookmarks, statusDiv, bookmarksList, platform) {
   // Ensure bookmarks is an array
   const bookmarksArray = Array.isArray(bookmarks) ? bookmarks : [];
   
-  // First, send bookmarks to the backend
+  // Send bookmarks to the backend
   sendBookmarksToBackend(bookmarksArray, platform, statusDiv);
 
   // Update status
-  statusDiv.textContent = `Found ${bookmarksArray.length} ${platformName} ${itemName}!`;
-  console.log(`Displaying ${bookmarksArray.length} ${platformName} ${itemName}`);
+  statusDiv.textContent = `Successfully processed ${bookmarksArray.length} ${platformName} ${itemName}!`;
+  console.log(`Processed ${bookmarksArray.length} ${platformName} ${itemName}`);
 
-  // Clear previous content
-  bookmarksList.innerHTML = '';
-
-  // Add options and export buttons
-  const optionsBar = document.createElement('div');
-  optionsBar.className = 'sort-options';
-  
-  // Basic sort options
-  let optionsHTML = `
-    <label>Sort by: 
-      <select id="sort-bookmarks">
-        <option value="newest">Newest first</option>
-        <option value="oldest">Oldest first</option>
-      </select>
-    </label>
-    <button id="export-json">Export JSON</button>
+  // Clear previous content and show simple success message
+  bookmarksList.innerHTML = `
+    <div class="centered-message">
+      <div class="success-message">
+        <strong>✓ ${bookmarksArray.length} ${itemName} successfully saved to your database!</strong>
+      </div>
+    </div>
   `;
-  
-  // Add debug button in development
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || true) { // Always show for now
-    optionsHTML += `<button id="show-raw-json" style="margin-left: 10px;">Show Raw JSON</button>`;
-  }
-  
-  optionsBar.innerHTML = optionsHTML;
-  bookmarksList.appendChild(optionsBar);
-
-  // Add export functionality
-  document.getElementById('export-json').addEventListener('click', () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(bookmarksArray, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute('href', dataStr);
-    downloadAnchorNode.setAttribute('download', `${platform}-${itemName}-${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  });
-  
-  // Add debug JSON view functionality
-  const rawJsonButton = document.getElementById('show-raw-json');
-  if (rawJsonButton) {
-    rawJsonButton.addEventListener('click', () => {
-      const jsonContainer = document.createElement('div');
-      jsonContainer.style.margin = '10px 0';
-      jsonContainer.style.padding = '10px';
-      jsonContainer.style.border = '1px solid #ccc';
-      jsonContainer.style.backgroundColor = '#f9f9f9';
-      jsonContainer.style.maxHeight = '300px';
-      jsonContainer.style.overflow = 'auto';
-      jsonContainer.style.whiteSpace = 'pre-wrap';
-      jsonContainer.style.fontSize = '12px';
-      jsonContainer.style.fontFamily = 'monospace';
-      
-      jsonContainer.textContent = JSON.stringify(bookmarksArray, null, 2);
-      
-      // If there's already a JSON container, replace it, otherwise add it
-      const existingContainer = document.querySelector('.json-debug-container');
-      if (existingContainer) {
-        existingContainer.remove();
-        rawJsonButton.textContent = 'Show Raw JSON';
-      } else {
-        jsonContainer.className = 'json-debug-container';
-        bookmarksList.insertBefore(jsonContainer, document.querySelector('.bookmarks-container'));
-        rawJsonButton.textContent = 'Hide Raw JSON';
-      }
-    });
-  }
-
-  // Add sort functionality
-  document.getElementById('sort-bookmarks').addEventListener('change', function() {
-    const sortValue = this.value;
-    const sortedBookmarks = [...bookmarksArray];
-    
-    if (sortValue === 'oldest') {
-      // For Twitter bookmarks with createdAt, sort by that
-      // For LinkedIn, we may not have this info
-      sortedBookmarks.sort((a, b) => {
-        if (a.createdAt && b.createdAt) {
-          return new Date(a.createdAt) - new Date(b.createdAt);
-        }
-        return 0; // No reliable date to sort by
-      });
-    } else {
-      // Newest first (default)
-      sortedBookmarks.sort((a, b) => {
-        if (a.createdAt && b.createdAt) {
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        }
-        return 0; // No reliable date to sort by
-      });
-    }
-    
-    renderBookmarks(sortedBookmarks);
-  });
-
-  // Create container for the bookmarks
-  const bookmarksContainer = document.createElement('div');
-  bookmarksContainer.className = 'bookmarks-container';
-  bookmarksList.appendChild(bookmarksContainer);
-
-  // Render initial bookmarks
-  renderBookmarks(bookmarksArray);
-
-  /**
-   * Renders the bookmark items in the container
-   * @param {Array} items - The bookmarks to render
-   */
-  function renderBookmarks(items) {
-    const container = document.querySelector('.bookmarks-container');
-    container.innerHTML = '';
-    
-    // Show message if no bookmarks
-    if (items.length === 0) {
-      container.innerHTML = `
-        <div class="no-bookmarks-message">
-          ${platform === 'linkedin' 
-            ? `No ${itemName} found. It looks like you haven't saved any LinkedIn posts yet, or they couldn't be retrieved.`
-            : `No ${itemName} found. Try visiting your ${platformName} ${itemName} page and try again.`}
-        </div>
-      `;
-      return;
-    }
-    
-    // Create bookmarks HTML
-    items.forEach(bookmark => {
-      const card = document.createElement('div');
-      card.className = 'bookmark-card';
-      
-      // Common card header with author info
-      let cardHeader = `
-        <div class="bookmark-header">
-          <div class="bookmark-author">
-            ${bookmark.author && bookmark.author.photo ? 
-              `<img src="${bookmark.author.photo}" alt="${bookmark.author.name || 'Author'}" class="author-photo" onerror="this.style.display='none';" />` : 
-              ''}
-            <a href="${bookmark.author && bookmark.author.profileUrl ? bookmark.author.profileUrl : '#'}" target="_blank" class="author-link">
-              ${bookmark.author && bookmark.author.name ? bookmark.author.name : 'Unknown'}
-            </a>
-          </div>
-      `;
-      
-      // Add date if available
-      if (bookmark.createdAt) {
-        let date;
-        // Check if the date is already a Date object or needs to be parsed
-        if (typeof bookmark.createdAt === 'string') {
-          date = new Date(bookmark.createdAt); // This handles Twitter's format
-        } else {
-          date = bookmark.createdAt; // This handles LinkedIn's parsed Date objects
-        }
-        
-        // Format the date consistently
-        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-        cardHeader += `<div class="bookmark-date">${formattedDate}</div>`;
-      }
-      
-      cardHeader += `</div>`;
-      
-      // Bookmark content with text
-      let cardContent = `
-        <div class="bookmark-content">
-          <div class="bookmark-text">${bookmark.text || 'No text content'}</div>
-      `;
-      
-      // Add media if available
-      if (bookmark.media && bookmark.media.length > 0) {
-        cardContent += `<div class="bookmark-media">`;
-        
-        bookmark.media.forEach(media => {
-          if (media.type === 'image') {
-            cardContent += `
-              <div class="media-item">
-                <img src="${media.url}" alt="Bookmark image" class="media-image" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Crect%20fill%3D%22%23f2f2f2%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20x%3D%2210%22%20y%3D%2255%22%3EImage%20unavailable%3C%2Ftext%3E%3C%2Fsvg%3E';" />
-              </div>
-            `;
-          } else if (media.type === 'video') {
-            if (media.isVideoThumbnail) {
-              // Show image as thumbnail for video
-              cardContent += `
-                <div class="media-item">
-                  <div class="video-thumbnail">
-                    <img src="${media.url}" alt="Video thumbnail" class="media-image" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Crect%20fill%3D%22%23f2f2f2%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20x%3D%2210%22%20y%3D%2255%22%3EVideo%20thumbnail%20unavailable%3C%2Ftext%3E%3C%2Fsvg%3E';" />
-                    <div class="video-play-icon">▶</div>
-                  </div>
-                </div>
-              `;
-            } else {
-              // Show video player
-              cardContent += `
-                <div class="media-item">
-                  <video controls class="media-video">
-                    <source src="${media.url}" type="video/mp4">
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-              `;
-            }
-          }
-        });
-        
-        cardContent += `</div>`;
-      }
-      
-      cardContent += `</div>`;
-      
-      // Card footer with link to original post
-      const cardFooter = `
-        <div class="bookmark-footer">
-          <a href="${bookmark.url || '#'}" target="_blank" class="bookmark-link">
-            Open original ${platform === 'twitter' ? 'tweet' : 'post'}
-          </a>
-        </div>
-      `;
-      
-      // Combine all parts
-      card.innerHTML = cardHeader + cardContent + cardFooter;
-      container.appendChild(card);
-    });
-  }
 }
 
 /**
@@ -709,7 +474,6 @@ async function sendBookmarksToBackend(bookmarks, platform, statusDiv) {
       console.log(`Sending ${bookmarks.length} ${platform} bookmarks to backend: ${backendUrl}`);
       
       // Update status to show we're saving to backend
-      const originalStatus = statusDiv.textContent;
       statusDiv.textContent = `Saving ${bookmarks.length} ${platform} bookmarks to your database...`;
       
       // Transform bookmarks to match the expected backend format
@@ -725,7 +489,8 @@ async function sendBookmarksToBackend(bookmarks, platform, statusDiv) {
         media: bookmark.media || [],
         platform: platform === 'twitter' ? 'x' : platform
       }));
-      const authToken = "eyJhbGciOiJIUzI1NiIsImtpZCI6ImVJQnVYdEJWa3R1SXJaaUkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lxa2NzdWNobnBsenZod2htaG1yLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI0NjZkYmYxOS03ODlmLTQxOGItOGIxYy1iZDMxNWVjMGMyMDciLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzQ3MTUwODYyLCJpYXQiOjE3NDcxNDcyNjIsImVtYWlsIjoiYWxhYmFjY2FyaTIwMjJAZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJnb29nbGUiLCJwcm92aWRlcnMiOlsiZ29vZ2xlIl19LCJ1c2VyX21ldGFkYXRhIjp7ImF2YXRhcl91cmwiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJblJDODJUQlFtdGx5V3RpV25fd21sOW5kLVNWeDUzb3EzMDNBR0dlcFVZT3ZKaHRvPXM5Ni1jIiwiZW1haWwiOiJhbGFiYWNjYXJpMjAyMkBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiQmFjY2FyaSBBbGEiLCJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJuYW1lIjoiQmFjY2FyaSBBbGEiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJblJDODJUQlFtdGx5V3RpV25fd21sOW5kLVNWeDUzb3EzMDNBR0dlcFVZT3ZKaHRvPXM5Ni1jIiwicHJvdmlkZXJfaWQiOiIxMDk0OTY0OTgyMTUxNzg5NjI1NzIiLCJzdWIiOiIxMDk0OTY0OTgyMTUxNzg5NjI1NzIifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvYXV0aCIsInRpbWVzdGFtcCI6MTc0NzEzMDk0MX1dLCJzZXNzaW9uX2lkIjoiZWVjMTg3NTQtMDU3YS00MTU5LTg5NDUtZGE3OTAxYWQyYWI1IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0._k_BfwL8phBdpBxrFUArR69bBLN-G9zvV4lgSEL2MeA"
+      
+      const authToken = "eyJhbGciOiJIUzI1NiIsImtpZCI6ImVJQnVYdEJWa3R1SXJaaUkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lxa2NzdWNobnBsenZod2htaG1yLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI0NjZkYmYxOS03ODlmLTQxOGItOGIxYy1iZDMxNWVjMGMyMDciLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzQ3MTYyNjYyLCJpYXQiOjE3NDcxNTkwNjIsImVtYWlsIjoiYWxhYmFjY2FyaTIwMjJAZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJnb29nbGUiLCJwcm92aWRlcnMiOlsiZ29vZ2xlIl19LCJ1c2VyX21ldGFkYXRhIjp7ImF2YXRhcl91cmwiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJblJDODJUQlFtdGx5V3RpV25fd21sOW5kLVNWeDUzb3EzMDNBR0dlcFVZT3ZKaHRvPXM5Ni1jIiwiZW1haWwiOiJhbGFiYWNjYXJpMjAyMkBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiQmFjY2FyaSBBbGEiLCJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJuYW1lIjoiQmFjY2FyaSBBbGEiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJblJDODJUQlFtdGx5V3RpV25fd21sOW5kLVNWeDUzb3EzMDNBR0dlcFVZT3ZKaHRvPXM5Ni1jIiwicHJvdmlkZXJfaWQiOiIxMDk0OTY0OTgyMTUxNzg5NjI1NzIiLCJzdWIiOiIxMDk0OTY0OTgyMTUxNzg5NjI1NzIifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvYXV0aCIsInRpbWVzdGFtcCI6MTc0NzE1NTUyM31dLCJzZXNzaW9uX2lkIjoiNzM0MzVhMWQtZmY3My00YzU1LWE3OTMtY2JlMGM0NzQxN2JiIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.AsX7tEP9Td-970y42Q818iIupzImJ_j0MU_VhwByfBI"      
       try {
         // Send POST request to the backend
         const response = await fetch(backendUrl, {
@@ -742,17 +507,15 @@ async function sendBookmarksToBackend(bookmarks, platform, statusDiv) {
           throw new Error(`Backend API error (${response.status}): ${errorText}`);
         }
         
-        // Update status on success
-        statusDiv.textContent = `${originalStatus} Bookmarks saved to your database.`;
         console.log('Bookmarks successfully saved to backend');
       } catch (fetchError) {
         console.error('Error saving bookmarks to backend:', fetchError);
-        statusDiv.textContent = `${originalStatus} (Failed to save to database: ${fetchError.message})`;
+        statusDiv.textContent = `Error: Failed to save to database: ${fetchError.message}`;
       }
     });
   } catch (error) {
     console.error('Error in sendBookmarksToBackend:', error);
-    statusDiv.textContent += ' (Error saving to database)';
+    statusDiv.textContent = 'Error saving to database';
   }
 }
 
@@ -1269,15 +1032,15 @@ function extractLinkedInSavedPosts(apiResponse) {
       const user = {
         name: item.title?.text || 'Unknown',
         profileUrl: item.actorNavigationUrl || item.actorNavigationContext?.url || null,
-        imageUrl: item.image?.attributes?.[0]?.detailData?.nonEntityProfilePicture?.vectorImage?.artifacts?.[0]?.fileIdentifyingUrlPathSegment || null
+        imageUrl: item.image?.attributes?.[0]?.detailData?.nonEntityProfilePicture?.vectorImage?.artifacts?.[0]?.fileIdentifyingUrlPathSegment || item.image?.attributes?.[0]?.detailData?.nonEntityCompanyLogo?.vectorImage?.artifacts?.[0]?.fileIdentifyingUrlPathSegment
       };
 
       // Extract and parse timestamp
       let timestamp = null;
       if (item.secondarySubtitle?.text) {
         const timeText = item.secondarySubtitle.text.trim();
-        // Parse relative time strings like "1h •", "1d •", "3d •", "2d â\u0080¢ ", "5m •", "30s •", "2mo •", "1y •"
-        const timeMatch = timeText.match(/(\d+)([hdms]|mo|y)/i);
+        // Parse relative time strings like "1h •", "1d •", "3d •", "2d â\u0080¢ ", "5m •", "3w •", "30s •", "2mo •", "1y •"
+        const timeMatch = timeText.match(/(\d+)([hdwms]|mo|y)/i);
         
         if (timeMatch) {
           const value = parseInt(timeMatch[1], 10);
@@ -1293,6 +1056,9 @@ function extractLinkedInSavedPosts(apiResponse) {
           } else if (unit === 'd') {
             // Days ago
             date.setDate(date.getDate() - value);
+          } else if (unit === 'w') {
+            // Weeks ago
+            date.setDate(date.getDate() - (value * 7));
           } else if (unit === 'm') {
             // Minutes ago
             date.setMinutes(date.getMinutes() - value);
