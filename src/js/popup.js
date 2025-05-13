@@ -539,12 +539,12 @@ function displayBookmarks(bookmarks, statusDiv, bookmarksList, platform) {
         let date;
         // Check if the date is already a Date object or needs to be parsed
         if (typeof bookmark.createdAt === 'string') {
-          date = new Date(bookmark.createdAt);
+          date = new Date(bookmark.createdAt); // This handles Twitter's format
         } else {
-          date = bookmark.createdAt;
+          date = bookmark.createdAt; // This handles LinkedIn's parsed Date objects
         }
         
-        // Format the date
+        // Format the date consistently
         const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
         cardHeader += `<div class="bookmark-date">${formattedDate}</div>`;
       }
@@ -824,7 +824,7 @@ async function fetchTwitterBookmarks(csrfToken, authToken, cookies) {
             profileUrl: `https://twitter.com/${userData.screen_name}`,
             photo: userData.profile_image_url_https
           },
-          createdAt: tweetData.created_at,
+          createdAt: new Date(tweetData.created_at),
           url: `https://twitter.com/${userData.screen_name}/status/${tweetData.id_str}`,
           media: mediaItems,
           stats: {
@@ -1004,7 +1004,7 @@ async function fetchLinkedInBookmarks(csrfToken, cookies) {
                 profileUrl: item.user.profileUrl
               },
               url: item.post.postUrl,
-              createdAt: null, // LinkedIn doesn't provide consistent timestamps
+              createdAt: item.post.timestamp, // Use the parsed timestamp
               media: []
             };
             
@@ -1134,11 +1134,50 @@ function extractLinkedInSavedPosts(apiResponse) {
         imageUrl: item.image?.attributes?.[0]?.detailData?.nonEntityProfilePicture?.vectorImage?.artifacts?.[0]?.fileIdentifyingUrlPathSegment || null
       };
 
+      // Extract and parse timestamp
+      let timestamp = null;
+      if (item.secondarySubtitle?.text) {
+        const timeText = item.secondarySubtitle.text.trim();
+        // Parse relative time strings like "1h •", "1d •", "3d •", "2d â\u0080¢ ", "5m •", "30s •", "2mo •", "1y •"
+        const timeMatch = timeText.match(/(\d+)([hdms]|mo|y)/i);
+        
+        if (timeMatch) {
+          const value = parseInt(timeMatch[1], 10);
+          const unit = timeMatch[2].toLowerCase();
+          
+          // Create a date object for the current time
+          const date = new Date();
+          
+          // Subtract the appropriate amount of time
+          if (unit === 'h') {
+            // Hours ago
+            date.setHours(date.getHours() - value);
+          } else if (unit === 'd') {
+            // Days ago
+            date.setDate(date.getDate() - value);
+          } else if (unit === 'm') {
+            // Minutes ago
+            date.setMinutes(date.getMinutes() - value);
+          } else if (unit === 's') {
+            // Seconds ago
+            date.setSeconds(date.getSeconds() - value);
+          } else if (unit === 'mo') {
+            // Months ago
+            date.setMonth(date.getMonth() - value);
+          } else if (unit === 'y') {
+            // Years ago
+            date.setFullYear(date.getFullYear() - value);
+          }
+          
+          timestamp = date;
+        }
+      }
+
       const post = {
         content: item.summary?.text || '',
         title: item.primarySubtitle?.text || '',
         postUrl: item.navigationUrl || (item.navigationContext?.url) || null,
-        timestamp: item.secondarySubtitle?.text || '',
+        timestamp: timestamp,
         imageUrl: item.entityEmbeddedObject?.image?.attributes?.[0]?.detailData?.vectorImage.rootUrl + item.entityEmbeddedObject?.image?.attributes?.[0]?.detailData?.vectorImage?.artifacts?.[0]?.fileIdentifyingUrlPathSegment || null
       };
       console.log('user:', user, 'post:', post);
@@ -1231,6 +1270,45 @@ function processLinkedInResponseLegacy(data, allBookmarks) {
             }
           }
         }
+        //Get the createdAt date
+        let createdAt = null;
+        if (result.secondarySubtitle && result.secondarySubtitle.text) {
+          const timeText = result.secondarySubtitle.text.trim();
+          // Parse relative time strings like "1h •", "1d •", "3d •", "2d â\u0080¢ ", "5m •", "30s •", "2mo •", "1y •"
+          const timeMatch = timeText.match(/(\d+)([hdms]|mo|y)/i);
+          
+          if (timeMatch) {
+            const value = parseInt(timeMatch[1], 10);
+            const unit = timeMatch[2].toLowerCase();
+            
+            // Create a date object for the current time
+            const date = new Date();
+            
+            // Subtract the appropriate amount of time
+            if (unit === 'h') {
+              // Hours ago
+              date.setHours(date.getHours() - value);
+            } else if (unit === 'd') {
+              // Days ago
+              date.setDate(date.getDate() - value);
+            } else if (unit === 'm') {
+              // Minutes ago
+              date.setMinutes(date.getMinutes() - value);
+            } else if (unit === 's') {
+              // Seconds ago
+              date.setSeconds(date.getSeconds() - value);
+            } else if (unit === 'mo') {
+              // Months ago
+              date.setMonth(date.getMonth() - value);
+            } else if (unit === 'y') {
+              // Years ago
+              date.setFullYear(date.getFullYear() - value);
+            }
+            
+            createdAt = date;
+          }
+        }
+
         
         // Create a normalized bookmark object
         const bookmark = {
@@ -1241,7 +1319,7 @@ function processLinkedInResponseLegacy(data, allBookmarks) {
             profileUrl: authorProfileUrl
           },
           url: postUrl,
-          createdAt: null, // LinkedIn doesn't consistently provide this
+          createdAt: createdAt, // Now using the parsed date
           media: []
         };
         
